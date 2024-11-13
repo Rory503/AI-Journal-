@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme System */
+:root[data-theme='light'] {
+  --bg-primary: theme('colors.gray.100');
+  --text-primary: theme('colors.gray.900');
+  --card-bg: theme('colors.white');
+}
+
+:root[data-theme='dark'] {
+  --bg-primary: theme('colors.gray.900');
+  --text-primary: theme('colors.gray.100');
+  --card-bg: theme('colors.gray.800');
+}
+
+:root[data-theme='nature'] {
+  --bg-primary: theme('colors.green.50');
+  --text-primary: theme('colors.green.900');
+  --card-bg: theme('colors.white');
+}
+
+:root[data-theme='ocean'] {
+  --bg-primary: theme('colors.blue.50');
+  --text-primary: theme('colors.blue.900');
+  --card-bg: theme('colors.white');
+}
+
+@layer base {
+  body {
+    @apply antialiased;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+  }
+}
+
+@layer components {
+  .card {
+    background-color: var(--card-bg);
+    @apply rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center px-4 py-2 text-sm font-medium rounded-md 
+    bg-blue-600 text-white hover:bg-blue-700 
+    transition-all duration-200 ease-in-out
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
+  }
+}
+
+/* Rest of your existing styles... */
