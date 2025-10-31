@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Plus, CheckCircle2, Circle, Calendar, Trophy } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Plus, CheckCircle2, Circle, Calendar, Trophy, Target, ListChecks } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useDailyData } from '../hooks/useDailyData';
 
 type GoalCategory = 'daily' | 'weekly' | 'longterm';
 
@@ -58,6 +59,12 @@ export function GoalTracker() {
   const [selectedArea, setSelectedArea] = useState<typeof areas[number]>('Personal');
   const [deadline, setDeadline] = useState('');
   const [showAchievements, setShowAchievements] = useState(false);
+  const { updateTodayData } = useDailyData();
+
+  useEffect(() => {
+    const completedGoals = goals.filter(goal => goal.completed).map(goal => goal.text);
+    updateTodayData({ completedGoals });
+  }, [goals, updateTodayData]);
 
   const addGoal = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,8 +79,9 @@ export function GoalTracker() {
       area: selectedArea
     };
 
-    setGoals(prev => [...prev, goal]);
-    checkAchievements([...goals, goal]);
+    const newList = [...goals, goal];
+    setGoals(newList);
+    checkAchievements(newList);
     setNewGoal('');
     setDeadline('');
   };
@@ -83,6 +91,8 @@ export function GoalTracker() {
       const newGoals = prev.map(goal =>
         goal.id === id ? { ...goal, completed: !goal.completed } : goal
       );
+      const completedGoals = newGoals.filter(goal => goal.completed).map(goal => goal.text);
+      updateTodayData({ completedGoals });
       checkAchievements(newGoals);
       return newGoals;
     });
@@ -91,12 +101,10 @@ export function GoalTracker() {
   const checkAchievements = (currentGoals: Goal[]) => {
     const newAchievements = [...achievements];
 
-    // First Goal Achievement
     if (!achievements[0].unlocked && currentGoals.length > 0) {
       newAchievements[0].unlocked = true;
     }
 
-    // Deadline Master Achievement
     const completedBeforeDeadline = currentGoals.filter(goal => {
       if (!goal.deadline || !goal.completed) return false;
       return new Date(goal.deadline) >= new Date();
@@ -106,7 +114,6 @@ export function GoalTracker() {
       newAchievements[1].unlocked = true;
     }
 
-    // Area Expert Achievement
     const completedAreas = new Set(
       currentGoals
         .filter(goal => goal.completed && goal.area)
@@ -120,128 +127,187 @@ export function GoalTracker() {
     setAchievements(newAchievements);
   };
 
-  const getDaysUntilDeadline = (deadline: string) => {
+  const getDaysUntilDeadline = (goalDeadline: string) => {
     const days = Math.ceil(
-      (new Date(deadline).getTime() - new Date().getTime()) / (1000 * 3600 * 24)
+      (new Date(goalDeadline).getTime() - new Date().getTime()) / (1000 * 3600 * 24)
     );
     return days;
   };
 
+  const completionSummary = useMemo(() => {
+    if (goals.length === 0) {
+      return 'Set a focus so your coach can celebrate with you.';
+    }
+    const completed = goals.filter(goal => goal.completed).length;
+    if (completed === 0) return 'You have clear aims—choose one small step to get rolling.';
+    if (completed < goals.length) return 'Beautiful! Keep momentum by highlighting the next doable action.';
+    return 'All goals checked! Take a breath and honor how far you have come.';
+  }, [goals]);
+
+  const dailyWins = goals.filter(goal => goal.category === 'daily' && goal.completed).length;
+  const weeklyWins = goals.filter(goal => goal.category === 'weekly' && goal.completed).length;
+  const longTermWins = goals.filter(goal => goal.category === 'longterm' && goal.completed).length;
+
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">Goal Tracker</h2>
-        <button
-          onClick={() => setShowAchievements(!showAchievements)}
-          className="flex items-center space-x-2 text-blue-600 hover:text-blue-700"
-        >
-          <Trophy className="w-5 h-5" />
-          <span>Achievements</span>
-        </button>
-      </div>
+    <section className="card p-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">Goal & Habit Coach</h2>
+            <p className="text-sm text-gray-500">Design intentions you can actually celebrate—one clear step at a time.</p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-600">
+            <Target className="h-4 w-4" />
+            {goals.filter(goal => goal.completed).length}/{goals.length || 1} completed
+          </div>
+        </div>
 
-      {showAchievements && (
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {achievements.map(achievement => (
-            <div
-              key={achievement.id}
-              className={`p-4 rounded-lg ${
-                achievement.unlocked
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'bg-gray-50 text-gray-400'
-              }`}
-            >
-              <div className="text-2xl mb-2">{achievement.icon}</div>
-              <h3 className="font-medium">{achievement.name}</h3>
-              <p className="text-sm">{achievement.description}</p>
+        <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">{completionSummary}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-2xl bg-emerald-50 p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">
+              <ListChecks className="h-4 w-4" />
+              Daily wins
             </div>
-          ))}
+            <p className="mt-2 text-2xl font-semibold text-emerald-800">{dailyWins}</p>
+          </div>
+          <div className="rounded-2xl bg-amber-50 p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-amber-700">
+              <Calendar className="h-4 w-4" />
+              Weekly focus
+            </div>
+            <p className="mt-2 text-2xl font-semibold text-amber-800">{weeklyWins}</p>
+          </div>
+          <div className="rounded-2xl bg-sky-50 p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-sky-700">
+              <Trophy className="h-4 w-4" />
+              Long-term momentum
+            </div>
+            <p className="mt-2 text-2xl font-semibold text-sky-800">{longTermWins}</p>
+          </div>
         </div>
-      )}
 
-      <form onSubmit={addGoal} className="space-y-4 mb-6">
-        <div className="flex space-x-2">
-          <input
-            type="text"
-            value={newGoal}
-            onChange={(e) => setNewGoal(e.target.value)}
-            placeholder="Add a new goal..."
-            className="flex-1 p-2 border border-gray-200 rounded-lg"
-          />
+        <form onSubmit={addGoal} className="space-y-4">
+          <div className="flex gap-2 flex-wrap">
+            <input
+              type="text"
+              value={newGoal}
+              onChange={(e) => setNewGoal(e.target.value)}
+              placeholder="Add a goal or habit you want to nourish..."
+              className="flex-1 min-w-[200px] rounded-xl border border-gray-200 px-3 py-2 focus:border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-200"
+            />
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-xl bg-indigo-500 px-4 py-2 text-white transition-colors hover:bg-indigo-600"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value as GoalCategory)}
+              className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              <option value="daily">Daily Ritual</option>
+              <option value="weekly">Weekly Focus</option>
+              <option value="longterm">Vision Goal</option>
+            </select>
+
+            <select
+              value={selectedArea}
+              onChange={(e) => setSelectedArea(e.target.value as typeof areas[number])}
+              className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              {areas.map(area => (
+                <option key={area} value={area}>{area}</option>
+              ))}
+            </select>
+
+            <input
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              className="rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+        </form>
+
+        <div className="flex items-center justify-between">
           <button
-            type="submit"
-            className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            onClick={() => setShowAchievements(!showAchievements)}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
           >
-            <Plus className="w-5 h-5" />
+            {showAchievements ? 'Hide achievements' : 'View achievements'}
           </button>
+          <span className="text-xs text-gray-400">Coach celebrates every update you save.</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value as GoalCategory)}
-            className="p-2 border border-gray-200 rounded-lg"
-          >
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="longterm">Long-term</option>
-          </select>
-
-          <select
-            value={selectedArea}
-            onChange={(e) => setSelectedArea(e.target.value as typeof areas[number])}
-            className="p-2 border border-gray-200 rounded-lg"
-          >
-            {areas.map(area => (
-              <option key={area} value={area}>{area}</option>
+        {showAchievements && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {achievements.map(achievement => (
+              <div
+                key={achievement.id}
+                className={`rounded-2xl border p-4 ${
+                  achievement.unlocked
+                    ? 'border-indigo-100 bg-indigo-50 text-indigo-700'
+                    : 'border-gray-200 text-gray-400'
+                }`}
+              >
+                <div className="text-2xl mb-2">{achievement.icon}</div>
+                <h3 className="font-semibold">{achievement.name}</h3>
+                <p className="text-sm leading-relaxed">{achievement.description}</p>
+              </div>
             ))}
-          </select>
+          </div>
+        )}
 
-          <input
-            type="date"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            className="p-2 border border-gray-200 rounded-lg"
-            min={new Date().toISOString().split('T')[0]}
-          />
-        </div>
-      </form>
-
-      <div className="space-y-4">
-        {goals.map(goal => (
-          <div
-            key={goal.id}
-            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <div className="flex items-center space-x-3 flex-1">
+        <div className="space-y-3">
+          {goals.map(goal => (
+            <div
+              key={goal.id}
+              className="flex items-start justify-between gap-4 rounded-2xl border border-gray-200 p-4 hover:border-indigo-200 transition-colors"
+            >
               <button
                 onClick={() => toggleGoal(goal.id)}
-                className="flex-shrink-0"
+                className="mt-1 text-indigo-500"
               >
                 {goal.completed ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  <CheckCircle2 className="w-5 h-5" />
                 ) : (
-                  <Circle className="w-5 h-5 text-gray-400" />
+                  <Circle className="w-5 h-5" />
                 )}
               </button>
               <div className="flex-1">
-                <span className={goal.completed ? 'line-through text-gray-400' : ''}>
-                  {goal.text}
-                </span>
-                <div className="flex items-center space-x-2 mt-1">
-                  <span className="text-sm text-gray-500">{goal.area}</span>
-                  {goal.deadline && (
-                    <span className="text-sm text-gray-500 flex items-center">
-                      <Calendar className="w-4 h-4 mr-1" />
-                      {getDaysUntilDeadline(goal.deadline)} days left
-                    </span>
-                  )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className={`font-medium text-gray-800 ${goal.completed ? 'line-through text-gray-400' : ''}`}>
+                    {goal.text}
+                  </p>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{goal.area}</span>
+                  <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-600">
+                    {goal.category === 'daily' ? 'Daily' : goal.category === 'weekly' ? 'Weekly' : 'Vision'}
+                  </span>
                 </div>
+                {goal.deadline && (
+                  <p className="mt-1 text-xs text-gray-500 flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    {getDaysUntilDeadline(goal.deadline)} days remaining
+                  </p>
+                )}
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+
+          {goals.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">
+              No goals yet—add one above to begin your gentle coaching journey.
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

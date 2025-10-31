@@ -2,6 +2,11 @@ export type DailyData = {
   date: string;
   waterIntake: number;
   sleepHours: number;
+  mood: string;
+  energyLevel: number;
+  intention: string;
+  gratitudeNote: string;
+  habits: Record<string, boolean>;
   foodEntries: Array<{
     id: string;
     name: string;
