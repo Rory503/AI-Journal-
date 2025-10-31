@@ -6,7 +6,7 @@ export function JournalEntry() {
   const [entry, setEntry] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { todayData, updateTodayData, getAllData } = useDailyData();
+  const { updateTodayData, getAllData } = useDailyData();
   const allData = getAllData();
 
   const handleSubmit = (e: React.FormEvent) => {

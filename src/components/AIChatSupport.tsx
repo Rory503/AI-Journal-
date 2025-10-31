@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Send, Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Send, HeartHandshake } from 'lucide-react';
 
 const motivationalStarters = [
-  "Hey there! 🌟 Ready to make today amazing? What's your biggest goal for today?",
-  "Rise and shine! 🌅 Remember, every day is a new opportunity. What would make today a win for you?",
-  "You've got this! 💪 Let's focus on what matters most today. What's on your mind?",
-  "Welcome back! 🎯 I noticed you're making great progress. Want to talk about your next steps?",
-  "Hey champion! 🏆 You're showing up, and that's half the battle. How can I support you today?"
+  "Hi friend 🌿 I’m here with you. What would feel nourishing to explore together right now?",
+  "Welcome back ✨ Take a breath—what’s one intention or feeling you’d like to unpack today?",
+  "Hey there 💛 Showing up is powerful. Want to talk through a habit or goal that needs a gentle nudge?",
+  "I’m listening 👂 How has your energy been? Let’s find a compassionate next step.",
+  "So glad you’re here 🌈 What support would make today feel just a bit lighter?",
 ];
 
 const followUps = [
-  "That's a great goal! How can we break it down into manageable steps?",
-  "You're on the right track! Want to explore some strategies to make this even more achievable?",
-  "I believe in you! Let's create an action plan to make this happen.",
-  "Amazing focus! Would you like some tips to help you stay motivated?",
-  "You're making fantastic progress! How about we set some milestones to celebrate along the way?"
+  "Thank you for sharing that. What is one tiny action that would honor how you feel?",
+  "Let’s make this kind to your nervous system. What would a 1% move forward look like?",
+  "I love that awareness. Who or what could support you in staying connected to this intention?",
+  "It’s okay to go slow. Would celebrating a small win help you stay encouraged?",
+  "Beautiful insight. How can we transform it into a compassionate commitment for today?",
 ];
 
 export function AIChatSupport() {
@@ -23,7 +23,6 @@ export function AIChatSupport() {
   const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
-    // Start conversation when component mounts
     const starter = motivationalStarters[Math.floor(Math.random() * motivationalStarters.length)];
     setMessages([{ text: starter, isUser: false }]);
   }, []);
@@ -33,44 +32,43 @@ export function AIChatSupport() {
     setTimeout(() => {
       setMessages(prev => [...prev, { text, isUser: false }]);
       setIsTyping(false);
-    }, 1500);
+    }, 1300);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
     if (!input.trim()) return;
 
-    // Add user message
-    setMessages(prev => [...prev, { text: input, isUser: true }]);
-    
-    // Generate AI response
+    setMessages(prev => [...prev, { text: input.trim(), isUser: true }]);
     const response = followUps[Math.floor(Math.random() * followUps.length)];
     simulateTyping(response);
-
     setInput('');
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5 h-[400px] flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">AI Support Chat</h2>
-        <div className="flex items-center text-blue-500">
-          <Sparkles className="w-5 h-5 mr-2" />
-          {isTyping && <span className="text-sm">AI is typing...</span>}
+    <section className="card h-[420px] p-6 flex flex-col">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-800">Companion Chat</h2>
+          <p className="text-xs text-gray-500">A gentle space to reflect, plan, and feel supported.</p>
         </div>
+        <span className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1.5 text-sm font-medium text-rose-500">
+          <HeartHandshake className="h-4 w-4" />
+          {isTyping ? 'Writing something tender…' : 'Listening deeply'}
+        </span>
       </div>
-      
-      <div className="flex-1 overflow-y-auto mb-4 space-y-3">
+
+      <div className="flex-1 overflow-y-auto space-y-3 rounded-2xl bg-slate-50 p-4">
         {messages.map((msg, idx) => (
           <div
             key={idx}
             className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[80%] p-3 rounded-lg ${
+              className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                 msg.isUser
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-800'
+                  ? 'bg-indigo-500 text-white'
+                  : 'bg-white text-gray-700 border border-slate-100'
               }`}
             >
               {msg.text}
@@ -79,21 +77,26 @@ export function AIChatSupport() {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="flex space-x-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          className="flex-1 p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
+      <form onSubmit={handleSubmit} className="mt-4 flex items-center gap-2">
+        <div className="flex-1">
+          <label className="sr-only" htmlFor="companion-message">Send a message</label>
+          <input
+            id="companion-message"
+            type="text"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="Share what’s on your heart or the next step you’d like to plan."
+            className="w-full rounded-xl border border-gray-200 px-4 py-2 text-sm focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          />
+        </div>
         <button
           type="submit"
-          className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="inline-flex items-center justify-center rounded-xl bg-indigo-500 p-2 text-white transition-colors hover:bg-indigo-600"
         >
-          <Send className="w-5 h-5" />
+          <Send className="h-5 w-5" />
+          <span className="sr-only">Send</span>
         </button>
       </form>
-    </div>
+    </section>
   );
 }
